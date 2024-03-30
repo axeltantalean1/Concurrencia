@@ -1,0 +1,86 @@
+Existen N personas que deben imprimir un trabajo cada una. 
+
+a) Implemente una solución suponiendo que existe una única impresora compartida por 
+todas las personas, y las mismas la deben usar de a una persona a la vez, sin importar el 
+orden. Existe una función Imprimir(documento) llamada por la persona que simula el uso 
+de la impresora. Sólo se deben usar los procesos que representan a las Personas.
+
+boolean usoimpresora=false;
+
+process persona[1..N]{
+    <await !usoimpresora 
+    usoimpresora=false>
+    Imprimir (documento)
+    usoimpresora=true;
+}
+
+b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+cola colaP;
+int siguiente=-1;
+process persona[id:1..N]{
+    <if siguiente==-1 
+        siguiente=id;
+        else Encolar(colaP,id);>
+    <await siguiente==id>
+        Imprimir(documento);
+    <if Empty(colaP) siguiente=-1;
+    else 
+        siguiente=Desencolar(colaP);>
+}
+
+c) Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero 
+dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la 
+debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+
+colaEspecial colaP;
+int siguiente=-1;
+process persona[id:1..N]{
+    <if siguiente==-1 
+        siguiente=id;
+        else Encolar(colaP,id,edad);>
+    <await siguiente==id
+        Imprimir(documento);>
+    <if Empty(colaP) siguiente=-1;
+    else 
+        siguiente=Desencolar(colaP);>
+}
+
+d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden 
+dado por el identificador del proceso (la persona X no puede usar la impresora hasta que 
+no haya terminado de usarla la persona X-1).
+
+
+int sig=1;
+process persona[id:1..N]{
+    <await siguiente==id>
+    Imprimir (documento)
+    sig=sig+1;
+}
+
+e) Modifique la solución de (c) para el caso en que además hay un proceso Coordinador que 
+le indica a cada persona cuando puede usar la impresora.
+
+colaEspecial colaP;
+boolean ok[N]=false;
+boolean ocupado=false;
+
+process persona[id:1..N]{
+    <Encolar(colaP,id);>
+    <await ok[id]>
+    <await ocupado=true>// Necesito esto? si no esta explota todo?
+    Imprimir(documento);
+    ok[id]=false;
+    ocupado=false
+}
+
+process Coordinador{
+    int id;
+    while true{
+        <await !Empty(colaP)>
+        <await !ocupado>
+        <id=Desencolar(colaP);>
+        ok[id]=true;
+        ocupado=true    
+    }
+}
