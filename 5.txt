@@ -1,0 +1,28 @@
+En un examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado comienza 
+el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de los 
+profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes respectando 
+el orden en que los alumnos van entregando.
+
+int nota[P]=0;
+cola colaExamenes;
+int corregidos=0;
+int alumnos=0;
+
+process alumno[id:1..P]{
+    <alumnos=alumnos+1;>
+    <await alumnos==P>
+    //resolver examen
+    <Encolar(colaExamenes,id);>
+    <await nota[id]==1 corregidos=corregidos+1>
+
+}
+
+process profe[id:1..3]{
+    int idAlumno;
+    while(corregidos<P-1){
+        <await !Empty(colaExamenes)>
+        <idAlumno=Desencolar(colaExamenes)>
+        //corrijo parcial
+        <nota[idAlumno]=1>
+    } 
+}
