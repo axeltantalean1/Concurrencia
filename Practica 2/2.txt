@@ -2,12 +2,23 @@
 lugar para que 7 camiones a la vez descarguen pero no pueden ser más de 5 del mismo tipo 
 de cereal. Nota: sólo se pueden usar procesos que representen a los camiones.
 
-cola espacios; //tiene 7
+sem espacios=7;
+sem cantTrigo=5,cantMaiz=5;
 
 process CamionesTrigo[id: 0..T-1]{
-    
+    P(cantTrigo);
+    P(espacios);
+    //descargo trigo
+    V(espacios);
+    V(cantTrigo);
+    M M M M M T 
+
 }
 
 process CamionesMaiz[id: 0..M-1]{
-    
+    P(cantMaiz);
+    P(espacios);
+    //descargo trigo
+    V(espacios);
+    V(cantTrigo);
 }
