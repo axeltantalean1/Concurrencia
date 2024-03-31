@@ -1,1 +1,24 @@
+P(s) espera a que s sea mayor que 0 y le resta 1
+V(s) le suma uno a s
 
+1. Un sistema operativo mantiene 5 instancias de un recurso almacenadas en una cola, cuando 
+un proceso necesita usar una instancia del recurso la saca de la cola, la usa y cuando termina 
+de usarla la vuelve a depositar. 
+
+cola colaRec;
+sem mutex=1;
+
+sem recursos=5;
+boolean usar=true;
+process Proceso[0..N]{
+    recurso rec;
+    P(recursos)
+    P(mutex)
+    rec=pop(colaRec);
+    V(mutex)
+    //uso recurso
+    P(mutex)
+    push(colaRec,rec);
+    V(mutex)
+    V(recursos);
+}
