@@ -18,16 +18,16 @@ monitor Admin{
 
     procedure ingresar{
         if (leyendo==5){
-            wait(cola); 
             esperando++;
+            wait(cola); 
         }
         leyendo++;    
     }
 
     procedure salir{
         if(esperando>0){
-            signal(cola);
             esperando--;
+            signal(cola);
         }
         else{
             leyendo--;
