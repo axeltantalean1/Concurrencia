@@ -1,1 +1,37 @@
+1. Implementar el acceso a una base de datos de solo lectura que puede atender a lo sumo 5 
+consultas simultáneas.
+
+
+process Consulta[id:0..N-1]{
+
+    Admin.ingresar();
+    consulto
+    Admin.salir();
+}
+
+monitor Admin{
+
+    cond cola;
+    int leyendo=0;
+    int esperando=0;
+
+
+    procedure ingresar{
+        if (leyendo==5){
+            wait(cola); 
+            esperando++;
+        }
+        leyendo++;    
+    }
+
+    procedure salir{
+        if(esperando>0){
+            signal(cola);
+            esperando--;
+        }
+        else{
+            leyendo--;
+        }
+    }
+}
 
