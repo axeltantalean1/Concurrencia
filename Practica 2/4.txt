@@ -4,14 +4,166 @@ a) Implemente una solución suponiendo que existe una única fotocopiadora compa
 por todas las personas, y las mismas la deben usar de a una persona a la vez, sin importar 
 el orden. Existe una función Fotocopiar() llamada por la persona que simula el uso de la 
 fotocopiadora. Sólo se deben usar los procesos que representan a las Personas.
+
+sem mutexImpresora=1;
+
+process Persona[id:0..39]{
+    P(mutexImpresora);
+    Fotocopiar();
+    V(mutexImpresora);
+}
+
 b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+sem mutex=1;
+cola C;
+sem turno[40]={[40] 0};
+boolean imprimiendo=false;
+
+process Persona[id:0..39]{
+    int idAux;
+    P(mutex);
+    if not imprimiendo
+        imprimiendo=true;
+        V(mutex);
+    else
+        push(C,id);
+        V(mutex)
+        P(turno[id])
+
+    Fotocopiar();
+
+    P(mutex)
+    if Empty(C){
+        imprimiendo=false;
+    }
+    else{
+        pop(C,idAux);
+        V(turno[idAux]);
+    }
+    V(mutex)
+}
+
 c) Modifique la solución de (b) para el caso en que se deba dar prioridad de acuerdo a la 
 edad de cada persona (cuando la fotocopiadora está libre la debe usar la persona de mayor 
 edad entre las que estén esperando para usarla).
+
+sem mutex=1;
+cola C;
+sem turno[40]={[40] 0};
+boolean imprimiendo=false;
+
+process Persona[id:0..39]{
+    int idAux;
+    P(mutex);
+    if not imprimiendo
+        imprimiendo=true;
+        V(mutex);
+    else
+        push(C,id,edad);
+        V(mutex)
+        P(turno[id])
+
+    Fotocopiar();
+
+    P(mutex)
+    if Empty(C){
+        imprimiendo=false;
+    }
+    else{
+        pop(C,idAux);
+        V(turno[idAux]);
+    }
+    V(mutex)
+}
+
 d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden 
 dado por el identificador del proceso (la persona X no puede usar la fotocopiadora hasta 
 que no haya terminado de usarla la persona X-1).
+
+sem mutex=1;
+cola C;
+sem turno[40]={1,0,---,0};
+boolean imprimiendo=false;
+
+process Persona[id:0..39]{
+    P(turno[id])
+    Fotocopiar();
+    V(turno[id+1]);
+
+}
+
 e) Modifique la solución de (b) para el caso en que además haya un Empleado que le indica 
 a cada persona cuando debe usar la fotocopiadora.
+
+sem mutexCola=1;
+sem usoImpresora=0;
+sem alguien=0;
+sem permiso[40]={[40] 0};
+boolean libre=true;
+cola C;
+process Persona[id:0..39]{
+    P(mutexCola)
+    push(C,id);
+    V(alguien)
+    V(mutexCola)
+    P(permiso[id])
+    Fotocopiar();
+    V(usoImpresora)
+}
+
+process Empleado{
+    while(true)
+            P(alguien)
+            P(mutexCola)
+            pop(C,idAux)
+            V(mutexCola)
+            V(permiso[idAux]) 
+            P(usoImpresora);
+}
+
 f) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le indica 
 a la persona cuando puede usar una fotocopiadora, y cual debe usar
+
+sem mutexCola=1;
+sem usoImpresora=0;
+sem alguien=0;
+sem permiso[40]={[40] 0};
+sem impresoras=10;
+sem mutexRec=1;
+
+int idFoto[40]={0}
+
+cola C;
+cola colaRec = {1,2,..,10}
+process Persona[id:0..39]{
+    P(mutexCola)
+    push(C,id);
+    V(alguien)
+    V(mutexCola)
+    P(permiso[id])
+    Fotocopiar(idFoto[id]);
+    P(mutexRec)
+    push(colaRec,idFoto[id])
+    V(mutexRec);
+    V(impresoras)
+}
+
+process Fotocopiadora[id:0..9]{
+    
+}
+
+process Empleado{
+    int idAux,idFAux;
+    while(true)
+        P(alguien)
+        P(impresoras);
+        P(mutexCola)
+        pop(C,idAux)
+        V(mutexCola)
+        P(mutexRec)
+        pop(colaRec,idFAux)
+        idFoto[idAux]=idFAux;
+        V(mutexRec)
+        V(permiso[idAux]) 
+}
