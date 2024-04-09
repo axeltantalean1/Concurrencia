@@ -1,0 +1,48 @@
+4. En una mesa de exámenes hay 3 profesores que les deben tomar un examen oral a 30 alumnos
+de acuerdo al orden de llegada. Cada examen es tomado por un único profesor. Cuando un 
+alumno llega, espera a que alguno de los profesores (cualquiera) lo llame y se dirige al 
+escritorio correspondiente a ese profesor, donde le tomará el examen; al terminar el 
+profesor le da la nota y el alumno se retira. Cuando un profesor está libre llama al siguiente 
+alumno. Nota: todos los procesos deben terminar su ejecución.
+
+process Alumno[id:1..30]{
+    int nota;
+    Admin.Rendir(id,nota);
+}
+
+process Profesor[id:1..3]{
+    int idAlumno;
+    while(haya alumnos){
+        Admin.llamarAlumno(idAlumno);
+        //tomar examen, obtener nota
+        Admin.darNota(idAlumno,nota);
+
+    }
+}
+
+monitor Admin{
+
+    cola C;
+    cond llamado,ok_nota;
+    int notaRes;
+    procedure rendir(id:in int, nota: out int){
+        llegue=true;
+        push(C,id);
+        signal(listo)
+        wait(llamado);
+        //rendir
+        wait(ok_nota);
+        nota=notaRes;
+    }
+
+    procedure llamarAlumno(idAlumno:out int){
+        if(not llegue)
+            wait(listo);
+        pop(C,idAlumno);
+    }
+
+    procedure darNota(idAlumno: in int, nota: in int){
+
+        
+    }
+}
