@@ -197,8 +197,6 @@ monitor Coordinador{
     cond cola[N], alguien,libre[N];
     cola C,espera,impresoras={1,2,3,4,5,6,7,8,9,10};
     int idFoto,esperando=0,impresorasEnUso=0;
-    boolean imprimiendo=false;
-
 
     procedure esperarIndicacion(id: in int,idFotoAux: out int){
         push(c,id) 

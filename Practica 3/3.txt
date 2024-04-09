@@ -1,0 +1,52 @@
+3. En un corralón de materiales hay un empleado que debe atender a N clientes de acuerdo al 
+orden de llegada. Cuando un cliente es llamado por el empleado para ser atendido, le da una 
+lista con los productos que comprará, y espera a que el empleado le entregue el 
+comprobante de la compra realizada.
+
+process Cliente[id:1..N]{
+    string comprobante;
+    string lista;
+    Admin.comprar(id,lista,comprobante);
+}
+
+process Empleado{
+    string comprobante;
+    while(true){
+        Admin.llamarCliente(lista);
+        // comprobante= procesar(lista);
+        Admin.entregarComprobante(comprobante);
+    }
+}
+
+monitor Admin{
+    string lis,comp[N];
+    cond listo,esperaTurno,ok_lista,ok_comp;
+    cola C;
+    boolean llegue=false;
+    procedure comprar(id:in int, lista: in string, comprobante: out string){
+        llegue=true;
+        signal(listo);
+        push(C,id);
+        wait(esperaTurno);
+        lis=lista;
+        signal(ok_lista);
+        wait(ok_comp);
+        comprobante=comp[id];    
+    }
+
+    procedure llamarCliente(lista:out string){
+        if(not llegue){
+            wait(listo)
+        }
+        signal(esperaTurno);
+        wait(ok_lista);
+        lista=lis;
+    }
+
+    procedure entregarComprobante(comprobante){
+        int auxId;
+        pop(C,auxId);
+        comp[auxId]=comprobante;
+        signal(ok_comp);
+    }
+}
