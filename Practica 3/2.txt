@@ -178,3 +178,64 @@ monitor Coordinador{
 
 f) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le 
 indica a la persona cuando puede usar una fotocopiadora, y cual debe usar
+
+process Persona[id:0..N-1]{
+    int idFoto;
+    Coordinador.esperarIndicacion(id,idFoto);
+    Fotocopiar(idFoto);
+    Coordinaror.salida(idFoto);
+}
+
+process Empleado{
+    while(true)
+        Coordinador.indicarImpresora()
+}
+
+monitor Coordinador{
+
+
+    cond cola[N], alguien,libre[N];
+    cola C,espera,impresoras={1,2,3,4,5,6,7,8,9,10};
+    int idFoto,esperando=0,impresorasEnUso=0;
+    boolean imprimiendo=false;
+
+
+    procedure esperarIndicacion(id: in int,idFotoAux: out int){
+        push(c,id) 
+        signal(alguien)
+        wait(cola[id])
+        idFotoAux=idFoto;
+    }
+
+    procedure indicarImpresora(){
+        int auxId;
+        if(Empty(C)){
+            wait(alguien)
+        }
+        pop(C,auxId);
+        if(impresorasEnUso>9){
+            push(espera,auxId);
+            esperando++;
+            wait(libre[auxId]);   
+        }
+        else{
+            impresorasEnUso++;
+        }
+        pop(impresoras,idFoto);
+        signal(wait[auxId]);
+    }
+
+    procedure salida(idFotoAux: in int){
+        int auxId;
+        if(esperando>0){
+            pop(espera,auxId)
+            esperando--;
+            signal(libre[auxId]); 
+        } 
+        else{
+            impresorasEnUso--;
+        }
+        push(impresoras,idFotoAux);
+        
+    }
+}
