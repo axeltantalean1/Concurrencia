@@ -18,40 +18,40 @@ process Profesor[id:1..3]{
     int contAlumno=0;
     while(contAlumno<29){
         Admin.proximo(id);
+        Admin.contadorAlumnos(contAlumno);
         Escritorio[id].darExamen();
         //CalcularNota(nota)
-        Escritorio[id].darNota(nota,contAlumno);
+        Escritorio[id].darNota(nota);
     }
 }
 
 monitor Escritorio[id:1..3]{
-    int notaAux,cont=0;
+    int notaAux;
     boolean alumno=false;
     cond ok_examen,ok_nota,ok_alumno,resuelto,alguien;
+
     procedure hacerExamen(nota: out int){
         alumno=true;
-        signal(alguien);
-        wait(ok_examen);
+        signal(alguien);            //aviso que puedo recibir el examen
+        wait(ok_examen);            //espero el examen
         //resolver examen
-        signal(resuelto);
-        wait(ok_nota);
-        nota=notaAux;
-        signal(ok_alumno);
+        signal(resuelto);           //termino de dar el oral
+        wait(ok_nota);              //espero la nota
+        nota=notaAux;               //guardo la nota para llevarmela al proceso
+        signal(ok_alumno);          //aviso que me voy
     }
     procedure darExamen(){
         if(not alumno){
-            wait(alguien);
+            wait(alguien);          //espero a que haya alguien
         }
-        signal(ok_examen);
-        wait(resuelto);
+        signal(ok_examen);          //doy el examen
+        wait(resuelto);             //espero a que termine de dar el oral
     }
 
     procedure darNota(nota: in int,contAlumno: out int){
-        notaAux=nota;
-        signal(ok_nota);
-        wait(ok_alumno);
-        cont++;
-        contAlumno=cont;
+        notaAux=nota;               //guardo la nota en la variable del monitor
+        signal(ok_nota);            //aviso que la nota esta disponible
+        wait(ok_alumno);            //espero a que el alumno se vaya
     }
 }
 
@@ -59,9 +59,14 @@ monitor Escritorio[id:1..3]{
 monitor Admin{
     cola pLibres;
     cola C;
-    int cantLibres=0,esperando=0;
+    int cantLibres=0,esperando=0,cont=0;
     cond turno;
     
+    procedure contadorAlumnos(contAlumno: out int){
+        cont++;                     //aumento el contador de alumnos a los que ya se les tomo el oral
+        contAlumno=cont;            //actualizo el contador de los procesos profes
+    }
+
     procedure llegada(id:in int,idProfe: out int){
         if(cantLibres==0){
             push(C,id);
