@@ -12,3 +12,12 @@ process usoRec{
         Encolar(C);    
     >
 }
+
+cola C={1,2,3,4,5};
+
+process proceso[id:1..N]{
+    <await !Empty(C)
+    rec=pop(c);>
+    //uso rec
+    <push(rec,c)>
+}

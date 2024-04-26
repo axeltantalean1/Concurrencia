@@ -9,3 +9,11 @@ process buscar[pos:1..M]{
     if(arreglo[id]==num)
         <total=total+1>
 }
+
+int arreglo[M];
+int num=A;
+int total=0;
+process contador[id: 1..M]{
+    if(arreglo[id]==A)
+        <total=total+1;>
+}
