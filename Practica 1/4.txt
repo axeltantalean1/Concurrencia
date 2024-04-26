@@ -120,10 +120,53 @@ process Persona[id:1..N]{
 c) Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero
 dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
 debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+
+
+colaEspecial c;
+int siguiente=-1;
+process Persona[id:1..N]{
+    <if(siguiente==-1){
+        siguiente=id;
+    }else push(c,id,edad)>
+    <await siguiente==id>
+    Imprimir(documento);
+    <if (Empty(c)){
+        siguiente=-1;
+    }else siguiente=pop(c,id);> 
+}
+
 d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
 dado por el identificador del proceso (la persona X no puede usar la impresora hasta que
 no haya terminado de usarla la persona X-1).
+
+boolean usoimpresora=false
+int siguiente=1;
+process Persona[id:1..N]{
+    <await siguiente==id>
+    Imprimir(documento);
+    siguiente=siguiente+1;
+}
+
 e) Modifique la solución de (c) para el caso en que además hay un proceso Coordinador que
 le indica a cada persona cuando puede usar la impresora.
 
 
+colaEspecial c;
+boolean usoimpresora=false;
+boolean turno[N]={false}
+process Persona[id:0..N-1]{
+    <push(c,id,edad);>
+    <await turno[id]>
+    Imprimir(documento) 
+    usoImpresora=false;    
+}
+
+process Coordinador{
+    WHILE(TRUE){    
+            <await !Empty(c)>
+            <await !usoimpresora>
+            <idAux=pop(c,id)>
+            usoImpresora=true;
+            turno[id]=true;
+    }
+}

@@ -26,3 +26,34 @@ process profe[id:1..3]{
         <nota[idAlumno]=1>
     } 
 }
+
+En un examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado comienza 
+el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de los 
+profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes respectando 
+el orden en que los alumnos van entregando.
+
+int cont=0;
+boolean listo[P]={false};
+cola C;
+int nota[P]={0};
+
+process alumno[id:0..P-1]{
+    int nota;
+    <cont=cont+1>
+    <await cont==P>
+    //resolver examen
+    <push(C,id);> // entrego el examen
+    <await listo[id]>
+    nota=nota[id];
+}
+
+process profe[id:0..2]{
+    while(TRUE){
+        <await !Empty(c)>
+        <id=pop(c)>
+        //corrijo examen y obtengo nota
+        <nota[id]=nota>
+        <listo[id]=true>
+    }
+}
+
