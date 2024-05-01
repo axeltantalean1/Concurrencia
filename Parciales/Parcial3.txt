@@ -1,0 +1,90 @@
+1. Resolver con SEMÁFOROS el siguiente problema. Se debe simular el uso de una máquina expendedora de gaseosas 
+con capacidad para 100 latas por parte de U usuarios. Además existe un repositor encargado de reponer las latas de 
+la máquina. Los usuarios usan la máquina según el orden de llegada. Cuando les toca usarla, sacan una lata y luego 
+se retiran. En el caso de que la máquina se quede sin latas, entonces le debe avisar al repositor para que cargue 
+nuevamente la máquina en forma completa. Luego de la recarga, saca una lata y se retira. Nota: maximizar la 
+concurrencia; mientras se reponen las latas se debe permitir que otros usuarios puedan agregarse a la fila.
+
+boolean usoMaquina=false;
+cola C;
+sem mutexCola,mutexMaquina,rellenarListo,llamarRepositor;
+cola Latas={1,..,100}
+process Usuario[id:0..U-1]{
+    int botella;
+    P(mutexCola)
+    if(not usoMaquina){
+        usoMaquina=true;
+        V(mutexCola)
+    }
+    else{
+        push(c,id);
+        v(mutexCola)
+        P(turno[id])
+    }
+    
+    if(Empty(Latas)){
+        V(llamarRepositor);
+        P(rellenarListo);
+    }        
+    pop(Latas,b);
+
+    P(mutexCola)
+    if(Empty(C)){
+        usoMaquina=false;
+    }
+    else{
+        pop(c,id);
+        V(turno[id]);
+    }
+    V(mutexCola)
+}
+
+process Repositor{
+    while(true){
+        P(llamarRepositor);
+        for i=1..100{
+            push(Latas,i);
+        }
+        V(rellenarListo);
+    }
+}
+
+2. Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida 
+deben utilizar un único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden 
+utilizar procesos que representen a los escaladores; cada escalador usa sólo una vez el paso.
+
+process Escalador[id:0..29]{
+    admin.permiso(id);
+    //uso paso
+    admin.meVoy()    
+}
+
+monitor admin{
+    cond turno;
+    int contador=0;
+    procedure permiso(id: in int){
+        if(libre){
+            libre=false
+        }
+        else{
+            contador++;
+            wait(turno);
+        }
+    }
+
+    procedure meVoy{
+        if(contador>0){
+            contador--;
+            signal(turno);
+        }
+        else{
+            libre=true;
+        }
+    }
+
+}
+
+
+
+
+
