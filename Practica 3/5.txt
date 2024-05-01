@@ -1,0 +1,102 @@
+
+ Suponga una comisión con 50 alumnos. Cuando los alumnos llegan forman una fila, una 
+vez que están los 50 en la fila el jefe de trabajos prácticos les entrega el número de grupo 
+(número aleatorio del 1 al 25) de tal manera que dos alumnos tendrán el mismo número de 
+grupo (suponga que el jefe posee una función DarNumero() que devuelve en forma aleatoria 
+un número del 1 al 25, el jefe de trabajos prácticos no guarda el número que le asigna a 
+cada alumno). Cuando un alumno ha recibido su número de grupo comienza a realizar la 
+práctica. Al terminar de trabajar, el alumno le avisa al jefe de trabajos prácticos y espera la 
+nota. El jefe de trabajos prácticos, cuando han llegado los dos alumnos de un grupo les 
+devuelve a ambos la nota del GRUPO (el primer grupo en terminar tendrá como nota 25, el 
+segundo 24, y así sucesivamente hasta el último que tendrá nota 1).
+
+process Alumno[id:0..49]{
+    int num,nota;
+    admin.llegar();
+    admin.ObtenerNum(id,num);
+    /hacer tp
+    admin.termine(num,nota);
+}
+
+process Profesor{
+    int num;
+    admin.esperarAlumnos();
+    for i=0..49{
+        num=DarNumero();
+        admin.darNumero(num);
+    }
+    for i=1..25{
+        admin.entregarNota(i);
+    }
+}
+
+monitor admin {
+    int cant=0,cantEntregaListo=0;
+    int nums[50]=([50] 0);
+    int cantListo[25]=([25] 0);
+    int notaGrupo[25]=([25] 0);
+    cond barrera,condBarreraListo,condEntregaListo,esperarNota;
+    cond condNumListo[50], esperaGrupo[25];
+    boolean barreraListo=false;
+    boolean numListo[50]=([50] false);
+    cola cAlumnos,cGrupos;
+
+    procedure llegar(){
+        cant++;
+        push(cAlumnos,id);
+        if(cant==50){
+            barreraListo=true;
+            signal(condBarreraListo);
+        }
+        wait(barrera);
+    }
+
+    procedure ObtenerNum(id: in int, num: out int){
+        if(not numListo[id]){
+            wait(condNumListo[id]); /// NO HACE FALTA, en teoria me aseguro de que siempre entro aca cuando ya tengo el num
+        }
+        num=nums[id];
+    }
+
+    procedure termine(num: in int, nota: out int){
+        cantListo[num]++;
+        if(cantListo[num]==2){
+            entregaListo++;
+            push(cGrupos,num);
+            signal(condEntregaListo);
+            wait(esperarNota)
+            signal(esperaGrupo[num]);
+        }
+        else{
+            wait(esperaGrupo[num]);
+        }
+        nota=notaGrupo[num];
+        
+    }
+    //////////////// procedures profe////////////////////////////
+
+
+    procedure esperarAlumnos(){
+        if(not barreraListo){
+            wait(barreraListo)
+        }
+    }
+
+    procedure darNumero(num: in int){
+        int idAux;
+        pop(cAlumnos,idAux);
+        num[idAux]=num;
+        signal(barrera);
+    }
+
+    procedure entregarNota(i: in int){
+        int num;
+        if(cantEntregaListo==0){
+            wait(condEntregaListo);
+        }
+        pop(cGrupos,num);
+        notaGrupo[num]=i;
+        signal(esperarNota);
+        cantEntregaListo--;
+    }
+}

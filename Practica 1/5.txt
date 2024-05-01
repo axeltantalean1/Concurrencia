@@ -36,6 +36,8 @@ int cont=0;
 boolean listo[P]={false};
 cola C;
 int nota[P]={0};
+int corregidos=0;
+boolean liberar[3]={false,false,faslse};
 
 process alumno[id:0..P-1]{
     int nota;
@@ -46,14 +48,16 @@ process alumno[id:0..P-1]{
     <await listo[id]>
     nota=nota[id];
 }
-
+P=10
 process profe[id:0..2]{
-    while(TRUE){
-        <await !Empty(c)>
+    while(corregidos<10){
+        <await !Empty(c) corregidos++>
         <id=pop(c)>
         //corrijo examen y obtengo nota
-        <nota[id]=nota>
+        <nota[id]=nota;>
         <listo[id]=true>
+        if()
+            await(liberar[id])
     }
 }
 
