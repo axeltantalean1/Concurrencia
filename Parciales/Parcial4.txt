@@ -13,14 +13,12 @@ process Boleteria[id:0..E-1]{
     int idAux;
     while(true){
         <await (not Empty(c) pop(c,idAux);)>
-        <if(not Empty(c)){
-            if(entradas>0){
+        <if(entradas>0){
                 entrada[idAux]=generarEntrada(); 
                 entradas--;
             }
             else    
-                entrada[idAux]=-1;
-        }>
+                entrada[idAux]=-1;>
         atendido[idAux]=true;
     }
 }
