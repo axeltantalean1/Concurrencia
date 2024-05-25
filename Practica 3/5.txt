@@ -25,7 +25,7 @@ process Profesor{
         num=DarNumero();
         admin.darNumero(num);
     }
-    for i=1..25{
+    for i=25..1{
         admin.entregarNota(i);
     }
 }
@@ -71,7 +71,6 @@ monitor admin {
             wait(esperaGrupo[num]);
         }
         nota=notaGrupo[num];
-        
     }
     //////////////// procedures profe////////////////////////////
 

@@ -1,0 +1,72 @@
+Resolver con SENTENCIAS AWAIT (© y/o cawait B; S>) el siguiente problema. Para un partido de fútbol se venden E entradas de forma online, y hay P personas (P > E) que intentan comprar una entrada formando una única fila. Para la venta existen 5 boleterías virtuales que van atendiendo los pedidos de las personas de acuerdo con el orden de llegada. Cuando una boleteria atiende a una persona, si aún quedan entradas disponibles le envia el número de entrada vendida, sino le indica que no hay más entradas. Nota: maximizar la concurrencia
+
+int siguiente=-1
+boolean atendido[P]=([40] 0)
+process Persona[id:0..P-1]{
+    int entrada;
+    <push(c,id)>
+    <await atendido[id]>
+    entrada=entrada[id];
+}
+
+process Boleteria[id:0..E-1]{
+    int idAux;
+    while(true){
+        <await (not Empty(c) pop(c,idAux);)>
+        <if(entradas>0){
+                entrada[idAux]=generarEntrada(); 
+                entradas--;
+            }
+            else    
+                entrada[idAux]=-1;>
+        atendido[idAux]=true;
+    }
+}
+
+Resolver con MONITORES el siguiente problema. Para un experimento se tiene una red con 15 controladores de temperatura y un módulo central. Los controladores cada cierto tiempo toman la temperatura mediante la función medir() y se la envían a la central para que ésta le indique que debe hacer (número de l a 10), y luego realiza esa acción mediante la función actuar(). La central atiende los pedidos de los controladores de acuerdo al orden de llegada, usando la función determinar() para determinar la acción que deberá hacer ese controlador (número de 1 a 10). Nota: el tiempo que espera cada controlador para tomar nuevamente la temperatura empieza a contar después de haber ejecutado la función actuaro.
+
+process Controlador[id:0..14]{
+    int temp,accion;
+    while(true){
+        temp=medir();
+        Coordinador.enviarTemp(id,temp,accion);
+        actuar(accion);
+        delay(20)
+    }
+}
+
+process Central{
+    int id,temp,accion;
+    while(true){
+        Coordinador.recibirTemp(temp,id);
+        accion=determinar(temp);
+        Coordinador.enviarAccion(accion,id);
+    }
+}
+
+monitor Coordinador{
+    cola cTemps;
+    int cantTemps=0;
+    int acciones[15]=([15] 0)
+    
+    procedure enviarTemp(id:in int, temp:in int, accion: out int){
+        push(cTemps,temp,id);
+        cantTemps++;
+        signal(esperarTemp)
+        wait(respuestaCentral);
+        accion=acciones[id];
+    }
+
+    procedure recibirTemp(temp: out int, id: out int){
+        if(cantTemps==0){
+            wait(esperarTemp);
+        }
+        pop(cTemps,temp,id);
+    }
+
+    procedure enviarAccion(accion: in int,id: in int){
+        acciones[id]=accion;
+        signal(respuestaCentral);
+    }
+
+}
