@@ -1,0 +1,52 @@
+Se desea modelar el funcionamiento de un banco en el cual existen 5 cajas para realizar 
+pagos. Existen P personas que desean pagar. Para esto cada una selecciona la caja donde 
+hay menos personas esperando, una vez seleccionada espera a ser atendido. 
+NOTA: maximizando la concurrencia.
+
+chan cajaAUsar[P](int);
+chan buscarCaja(int);
+chan aviso(int);
+
+chan usarCaja[5](int);
+chan finCaja[5](int);
+chan resul[P](int);
+
+process Persona[id:0..P-1]{
+    int idCaja;
+
+    send buscarCaja(id);            //me encolo para buscar caja
+    send aviso(1);                  //aviso que me encolé
+    receive cajaAUsar[id](idCaja)   //recibo id de la caja con menos personas
+    
+    send usarCaja[idCaja](id);      //le aviso a la caja idCaja que llegue
+    receive resul[id](res);         //espero devolucion
+}
+
+process Caja[id:0..4]{
+    int idP;
+    receive usarCaja[id](idP);      //espero a que alguien llegue
+    //uso caja x tiempo
+    send resul[idP](res);           //envio devolucion a la persona idP
+    send finCaja[id](1);            //aviso que me fui
+}
+
+
+process Coordinador{
+    int cantPersonas[5]={0 [5]};
+    int idP,idCaja,ok;
+    while (true){
+        receive aviso(ok);                  //espero a que alguien llegue
+        for (i:0..4,i++){                   //nose si se puede poner el i++
+            if  (not empty(finCaja[i])) ->  receive finCaja[i](ok); //si se fueron de la caja i actualizo el contador
+                                            cantPersonas[i]--;
+                                            i--;                    //nose si esto se puede hacer, es para que vuelva a iterar en la misma caja pero se podria sacar
+
+                (not empty(buscarCaja) AND empty (finCaja[i])) ->   receive buscarCaja(idP);            //si alguien esta buscando caja y el de la caja i no aviso que se fue
+                                                                    idCaja=PosDelMin(cantPersonas);     //funcion que me devuelve la posicion del minimo del arreglo
+                                                                    cantPersonas[idCaja]++;             //actualizo la cant de personas en la caja
+                                                                    send cajaAUsar[idP](idCaja);        //le envio a la persona idP que caja usar
+            end if
+        }
+    }
+
+}
