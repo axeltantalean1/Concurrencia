@@ -9,14 +9,15 @@ al cliente
 
 process Cliente[id:0..N-1]{
     int idCabina;
-    send avisoLlegue(id);
+    send avisoLlegue(1);
+    send buscarCabina(id);
     receive cabinaAUsar[id](idCabina);
 
     send usarCabina[idCabina](1);
     receive finCabina[idCabina](ok);
 
     send pagar(id);
-    receive listo_pagar(vuelto);
+    receive listo_pagar[idCliente](vuelto);
 
 }
 
@@ -26,21 +27,29 @@ process Cabina[id:0..9]{
         //usarCabina
         send finCabina[idCabina](1);
         send libereCabina(id);
-    }
+        send hayCabina(1);
 }
 
 process Empleado{
-    boolean cabinaLibre[10]={true [10]}
+    cola cabinasLibres = {0,1,2,3,4,5,6,7,8,9};
     int idCabina,idCliente;
 
     while(true){
-
-        if (not empty(libereCabina)) -> receive libereCabina(idCabina);
-                                        cabinaLibre[idCabina]=true;
+        receive avisoLlegue(ok)
+        do (not empty(libereCabina)) -> receive libereCabina(idCabina);
+                                        push(cabinasLibres,idCabina)
                                         receive pagar(idCliente);
-                                        Cobrar(id);
-                                        send listo_pagar(vuelto);
-           (not empty()) 
+                                        Cobrar(idCliente);
+                                        send listo_pagar[idCliente](vuelto);
+        - (not empty(buscarCabina) 
+        AND empty(libereCabina) 
+        AND not empty(cabinasLibres)) ->receive buscarCabina(idCliente);
+                                        pop(cabinasLibres,idCabina);
+                                        send cabinaAUsar[idCliente](idCabina)
+        - (not empty(buscarCabina) 
+        AND empty(libereCabina) 
+        AND empty(cabinasLibres)) -> receive hayCabina(ok); // evito el busy waiting si llega gente y no hay cabinas libres(supongo que funciona)
+        end do
     }
 }
 
