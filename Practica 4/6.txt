@@ -21,7 +21,7 @@ process Empleado2{
     texto res;
     while(true){
         Admin!pedido();
-        Admin!reporte(muestra);
+        Admin?reporte(muestra);
         //Armo set de analisis con la muestra
         Empleado3!reporte(muestra);
         Empleador?respuesta(res);
