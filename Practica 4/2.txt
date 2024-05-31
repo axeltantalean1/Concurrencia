@@ -8,7 +8,7 @@ chan buscarCaja(int);
 chan aviso(int);
 
 chan usarCaja[5](int);
-chan finCaja[5](int);
+chan finCaja(int);
 chan resul[P](int);
 
 process Persona[id:0..P-1]{
@@ -27,7 +27,7 @@ process Caja[id:0..4]{
     receive usarCaja[id](idP);      //espero a que alguien llegue
     //uso caja x tiempo
     send resul[idP](res);           //envio devolucion a la persona idP
-    send finCaja[id](1);            //aviso que me fui
+    send finCaja(id);            //aviso que me fui
 }
 
 
@@ -36,17 +36,14 @@ process Coordinador{
     int idP,idCaja,ok;
     while (true){
         receive aviso(ok);                  //espero a que alguien llegue
-        for (i:0..4,i++){                   //nose si se puede poner el i++
-            if  (not empty(finCaja[i])) ->  receive finCaja[i](ok); //si se fueron de la caja i actualizo el contador
-                                            cantPersonas[i]--;
-                                            i--;                    //nose si esto se puede hacer, es para que vuelva a iterar en la misma caja pero se podria sacar
-
-                (not empty(buscarCaja) AND empty (finCaja[i])) ->   receive buscarCaja(idP);            //si alguien esta buscando caja y el de la caja i no aviso que se fue
-                                                                    idCaja=PosDelMin(cantPersonas);     //funcion que me devuelve la posicion del minimo del arreglo
-                                                                    cantPersonas[idCaja]++;             //actualizo la cant de personas en la caja
-                                                                    send cajaAUsar[idP](idCaja);        //le envio a la persona idP que caja usar
-            end if
-        }
+        if  (not empty(finCaja)) ->  receive finCaja(idCaja); //si se fueron de la caja idCaja actualizo el contador
+                                        cantPersonas[idCaja]--;
+                                       
+            (not empty(buscarCaja) AND empty (finCaja[i])) ->   receive buscarCaja(idP);            //si alguien esta buscando caja y el de la caja i no aviso que se fue
+                                                                idCaja=PosDelMin(cantPersonas);     //funcion que me devuelve la posicion del minimo del arreglo
+                                                                cantPersonas[idCaja]++;             //actualizo la cant de personas en la caja
+                                                                send cajaAUsar[idP](idCaja);        //le envio a la persona idP que caja usar
+        end if
     }
 
 }
