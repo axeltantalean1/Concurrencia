@@ -36,20 +36,22 @@ process Empleado{
 
     while(true){
         receive avisoLlegue(ok)
-        do (not empty(libereCabina)) -> receive libereCabina(idCabina);
-                                        push(cabinasLibres,idCabina)
-                                        receive pagar(idCliente);
-                                        Cobrar(idCliente);
-                                        send listo_pagar[idCliente](vuelto);
-        - (not empty(buscarCabina) 
-        AND empty(libereCabina) 
-        AND not empty(cabinasLibres)) ->receive buscarCabina(idCliente);
-                                        pop(cabinasLibres,idCabina);
-                                        send cabinaAUsar[idCliente](idCabina)
-        - (not empty(buscarCabina) 
-        AND empty(libereCabina) 
-        AND empty(cabinasLibres)) -> receive hayCabina(ok); // evito el busy waiting si llega gente y no hay cabinas libres(supongo que funciona)
-        end do
+        
+        while (not empty(libereCabina)){ 
+            receive libereCabina(idCabina);
+            push(cabinasLibres,idCabina)
+            receive pagar(idCliente);
+            Cobrar(idCliente);
+            send listo_pagar[idCliente](vuelto);
+        }
+
+        if (not empty(cabinasLibres)) {
+            receive buscarCabina(idCliente);
+            pop(cabinasLibres,idCabina);
+            send cabinaAUsar[idCliente](idCabina)
+        }else
+            receive hayCabina(ok); // evito el busy waiting si llega gente y no hay cabinas libres(supongo que funciona)
+        
     }
 }
 
