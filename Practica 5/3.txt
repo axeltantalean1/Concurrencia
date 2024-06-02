@@ -16,7 +16,12 @@ procedure Sistema is
     task Central is 
         entry Señal1(s:in int,res:out int);
         entry Señal2(s:in int,res:out int);
+        entry fin();
     end CEntral;    
+
+    task Reloj is 
+        entry iniciar();
+    end Reloj;
 
     task body Proceso1 is 
         s,res:int
@@ -50,30 +55,34 @@ procedure Sistema is
         s,res:int;
         reciboS2:boolean;
     begin
+        reciboS2=false;
         Accept señal1(s,res) do
             res=GeneroRes(s);
         end señal1
         loop
             select 
-                Accept señal1(s,res) do
-                    res=GeneroRes(s);
-                end señal1
-            or 
-                Accept señal2(s,res) do
-                    res=GeneroRes(s);
-                    reciboS2=true;
-                end 
-                while (reciboS2) do
-                    select 
-                        Accept señal2(s,res) do
-                            res=GeneroRes(s);
-                        end señal2;
-                    or delay 180 
-                        reciboS2=false;
-                    end select;
-                end while
+                when (not reciboS2) -> Accept señal1(s,res) do
+                                            res=GeneroRes(s);
+                                        end señal1
+            or  when (fin'count=0)-> Accept señal2(s,res) do
+                                        res=GeneroRes(s);
+                                        if (not reciboS2){
+                                            Reloj.iniciar();
+                                            reciboS2=true;
+                                        }
+                                     end señal2;                       
+            or Accept fin() do
+                reciboS2=false;
+               end fin;
+            end select;
         end loop
     end Central;
+
+    task body Reloj is
+        Accept iniciar();
+        delay(180);
+        Central.fin();
+    end Reloj;
 begin
 
 end Sistema;
