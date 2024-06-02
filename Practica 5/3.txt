@@ -1,0 +1,79 @@
+Se dispone de un sistema compuesto por 1 central y 2 procesos. Los procesos envían 
+señales a la central. La central comienza su ejecución tomando una señal del proceso 1, 
+luego toma aleatoriamente señales de cualquiera de los dos indefinidamente. Al recibir una 
+señal de proceso 2, recibe señales del mismo proceso durante 3 minutos.
+El proceso 1 envía una señal que es considerada vieja (se deshecha) si en 2 minutos no fue 
+recibida.
+El proceso 2 envía una señal, si no es recibida en ese instante espera 1 minuto y vuelve a 
+mandarla (no se deshecha).
+
+
+procedure Sistema is 
+
+    task Proceso1;
+    task Proceso2;
+
+    task Central is 
+        entry Señal1(s:in int,res:out int);
+        entry Señal2(s:in int,res:out int);
+    end CEntral;    
+
+    task body Proceso1 is 
+        s,res:int
+    begin
+        s= GeneroSeñal();
+        LOOP
+            select
+                Central.señal1(s,res);
+            or delay 120
+                s= GeneroSeñal();
+            end select
+        end loop
+    end Proceso1
+    
+    task body Proceso2 is
+        s,res:int
+    begin
+        s = GeneroSeñal2() 
+        LOOP
+            select
+                Central.señal(s,res);
+                s = GeneroSeñal()
+            or delay 60
+                null
+            end select
+        end loop
+    end Proceso2
+
+
+    task body Central is
+        s,res:int;
+        reciboS2:boolean;
+    begin
+        Accept señal1(s,res) do
+            res=GeneroRes(s);
+        end señal1
+        loop
+            select 
+                Accept señal1(s,res) do
+                    res=GeneroRes(s);
+                end señal1
+            or 
+                Accept señal2(s,res) do
+                    res=GeneroRes(s);
+                    reciboS2=true;
+                end 
+                while (reciboS2) do
+                    select 
+                        Accept señal2(s,res) do
+                            res=GeneroRes(s);
+                        end señal2;
+                    or delay 180 
+                        reciboS2=false;
+                    end select;
+                end while
+        end loop
+    end Central;
+begin
+
+end Sistema;
