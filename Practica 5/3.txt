@@ -39,8 +39,8 @@ procedure Sistema is
             select
                 Central.señal(s,res);
                 s = GeneroSeñal()
-            or delay 60
-                null
+            else
+                delay(60)
             end select
         end loop
     end Proceso2
