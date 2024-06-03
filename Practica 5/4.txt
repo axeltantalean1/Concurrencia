@@ -1,0 +1,104 @@
+En una clínica existe un médico de guardia que recibe continuamente peticiones de 
+atención de las E enfermeras que trabajan en su piso y de las P personas que llegan a la 
+clínica ser atendidos.
+Cuando una persona necesita que la atiendan espera a lo sumo 5 minutos a que el médico lo 
+haga, si pasado ese tiempo no lo hace, espera 10 minutos y vuelve a requerir la atención del 
+médico. Si no es atendida tres veces, se enoja y se retira de la clínica.
+Cuando una enfermera requiere la atención del médico, si este no lo atiende inmediatamente 
+le hace una nota y se la deja en el consultorio para que esta resuelva su pedido en el 
+momento que pueda (el pedido puede ser que el médico le firme algún papel). Cuando la 
+petición ha sido recibida por el médico o la nota ha sido dejada en el escritorio, continúa 
+trabajando y haciendo más peticiones.
+El médico atiende los pedidos teniendo dándoles prioridad a los enfermos que llegan para ser 
+atendidos. Cuando atiende un pedido, recibe la solicitud y la procesa durante un cierto 
+tiempo. Cuando está libre aprovecha a procesar las notas dejadas por las enfermeras.
+
+procedure Clinica is
+    task type Enfermeras;
+    
+    arrEnfermeras(1..N) array of Enfermeras
+
+    task type Personas;
+
+    arrPersonas(1..N) array of Personas;
+
+    task Escritorio is
+        entry dejarNota(datos:in text);
+    end Escritorio
+
+    task Medico is{
+        entry AtenderP(datos:in text);
+        entry AtenderE(datos:in text);
+        entry verNota(datos: out text);
+    }
+
+    task body Enfermeras is
+    datos,nota:text;
+    begin
+        loop
+            select 
+                Medico.AtenderE(datos);
+            else
+                Escritorio.dejarNota(nota);
+            end select
+        //trabaja
+        end loop
+    end Enfermeras;
+
+    task body Personas is
+    atendido:boolean;
+    cont:int;
+    begin
+        atendido=false;
+        cont = 0;
+        while(not atendido){
+            select
+                Medico.AtenderP(datos);
+                atendido=true
+            or delay(300)
+                cont++;
+                if(cont=3)
+                    atendido=false;
+                else
+                    delay(600);
+            end select;
+        }
+    end Personas;
+
+    task body Medico is
+
+    begin
+        loop
+            select
+                Accept AtenderP(datos: in text) is
+                    //demora x tiempo
+                end AtenderP;
+            or when AtenderP'count=0 ->Accept AtenderE(datos: in text) is
+                                          //demora x tiempo
+                                       end AtenderE;
+            
+            or when AtenderP'count=0 AND AtenderE'count=0 -> Accept verNota(data: in text) is
+                                                                //resuelvo nota
+                                                             end verNota;
+        end loop
+    end Medico;
+
+    task body Escritorio is
+    cola:queue;
+    begin
+        loop
+            select
+                Medico.verNota(pop(cola))
+            else
+                select
+                    Accept dejarNota(datos:text) is
+                        push(cola,datos)
+                    end dejarNota;
+                end select;
+            end select
+        end loop
+    end Escritorio;
+
+begin
+
+end Clinica; 
