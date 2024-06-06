@@ -1,0 +1,191 @@
+Resolver con PMA (Pasaje de Mensajes Asincrónico) la siguiente situación. En una ferretería hay 2 empleados que atienden a C clientes de acuerdo al orden de llegada. El cliente debe esperar a ser atendido para irse. Nota: maximizar la concurrencia.
+
+chan llegada(int), res[C](int),pedido(int);
+
+process Ciente[id:0..C-1]{
+    int res;
+
+    send pedido(id);
+    receive res[id](res);
+}
+
+process Empleado[id:0..1]{
+    int idCli;
+    while (true){
+        receive pedido(idCli);
+        //atiendo
+        send res[idCli](1);
+    }
+}
+
+Resolver con PMS (Pasaje de Mensajes Sincrónico) la siguiente situación. Una oficina de correo recibe paquetes para dos destinos diferentes (Norte y Sur), existe un encargado que recibe los paquetes y los distribuye según el destino. Existen dos camiones (uno para cada destino) que llegan, cargan todos los paquetes que hay en el momento para el destino correspondiente y los llevan. Nota: maximizar la concurrencia.
+
+Process Oficina{
+    int paquete;
+    while (true){
+        if(destino=Norte)
+            Coordinador!(paquete,norte)
+        else 
+            Coordinador!(paquete,sur)    
+    }
+}
+
+Process Coordinador{
+    int ok,paquete;
+    text destino;
+    cola p;
+
+    do Oficina?(paquete,destino) -> push(p,(paquete,destino))
+    -  not Empty(p); Encargado?(ok)-> Encargado!(pop(p))
+}
+
+Process Encargado{
+    int paquete;
+    text destino;
+    boolean stop[2]=false; 
+
+    while(true){
+        Coordinador!(1)
+        if not stop1 AND not stop2; Coordinador?(paquete,destino) ->
+                                    if(destino=Norte)
+                                        coordinador2!(paquete,0)
+                                    else 
+                                        coordinador2!(paquete,1)
+        - Camion[*]?llegue(idCamion) -> stop[idCamion]=true;
+        - Camion[*]?fin(idCamion) -> stop[idCamion]=false;
+    }
+}
+
+
+process coordinador2{
+    cola p0,p1;
+    int idCamion,paquete,ok;
+
+    do Encargado?(paquete,idCamion) -> if(idCamion=0) push(p0,paquete)
+                                        else push(p1,paquete)
+    -  not Empty(p0); Camion[0]?(ok) -> if(not Empty(p0)) Camion[0]!(pop(p0))
+                                        else Camion[0]!(-1)
+    -  not Empty(p1); Camion[1]?(ok) -> if(not Empty(p1)) Camion[1]!(pop(p1))
+                                        else Camion[0]!(-1)
+}
+
+Process Camion[id:0..1]{
+    Cola P;
+    while(true){
+        //llego
+        hayPaquetes=true;
+        while (hayPaquetes){
+            Encargado!llegue(idCamion);
+            coordinador2!(1)
+            coordinador2?(paquete)
+            if(paquete<>-1)
+                push(P,paquete);
+            else 
+                hayPaquetes=false
+                Encargado!fin(idCamion)
+        }
+        //Me voy
+    }
+}
+
+**Resolver con ADA la siguiente situación. Un servidor de impresión tiene dos impresoras (color y negra). Existen C clientes que mandan a imprimir al servidor UN documento cada uno (cada uno ya sabe si debe imprimir en color o blanco/negro) y esperan a que se termine de imprimir su documento. El servidor atiende los pedidos de acuerdo a las siguientes condiciones:
+
+Si el documento es en color, lo debe imprimir en la impresora color.
+Si el documento es en blanco y negro, lo debe imprimir en la impresora negra, o bien en la impresora color si no hubiese trabajos en color pendientes por ser impresos.
+Nota: no es necesario que las impresoras y el servidor terminen su ejecución.**
+
+procedure Examen is 
+
+    task type Cliente is 
+        entry Ident(idCli:in int);
+        entry RecibirImpresion(impresion:out text);
+    end Cliente;
+
+    arrClientes(1..C) array of Cliente;
+
+    task ImpresoraBN;
+
+    task ImpresoraC;
+
+    task Servidor is
+        entry Peticion(documento:in text, formato:in string)
+        entry usarBN(documento:out text)
+        entry usarC(documento:out text)
+    end Servidor
+
+    task body Cliente is
+    idC:int
+    formato: string;
+    documento:text;
+    impresion:text;
+    begin
+        Accept Ident(idCli:in int) is
+            idC=idCli;
+        end Ident;
+
+        Servidor.Peticion(documento,formato);   
+        Accept ObtenerImpresion(impresion) do
+            impresion=impresion
+        end ObtenerImpresion;
+    end Cliente;
+
+    task body ImpresoraBN is
+        impresion:text
+        documento:text
+        idCli:int;
+    begin
+        loop 
+            Servidor.usarBN(documento,idCli);
+            impresion=Imprimir(documento)
+            arrCliente(idCli).RecibirImpresion(impresion);
+        end loop
+    end ImpresoraBN;
+
+    task body ImpresoraBN is
+        impresion:text
+        documento:text
+        idCli:int;
+    begin
+        loop 
+            Servidor.usarC(documento,idCli);
+            impresion=Imprimir(documento)
+            arrCliente(idCli).RecibirImpresion(impresion);
+        end loop
+    end ImpresoraBN;
+
+    task body Servidor is
+    colaBN,colaC:Cola;
+    begin
+        loop
+            select
+                Accept Peticion(documento:in text, formato:in string; idCli:in int) do
+                    if(formato="B/N){
+                        push(colaBN,idCli);
+                    }
+                    else 
+                        push(colaC,idCli);
+                end Peticion;
+            or when (not empty(colaC) OR not empty(colaBN))
+                    Accept usarC(documento:out text,idCli: out int) do
+                        if(not empty(colaC)){
+                            pop(colaC,(documento,idCli))
+                        }
+                        else if(not empty colaBN){
+                            pop(colaBN,(documento,idCli))
+                        }
+                    end usarC 
+            or when (not empty(colaBN))
+                    Accept usarBN(documento:out text,idCli: out int) do
+                        if(not empty colaBN){
+                            pop(colaBN,(documento,idCli))
+                        }
+                    end usarBN 
+            end select
+        end loop
+    end Servidor;
+
+begin
+    for i:1..C loop
+        arrClientes(i).Ident(i);
+    end loop
+end Examen;

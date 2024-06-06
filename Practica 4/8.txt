@@ -33,7 +33,7 @@ process Profesor[id:0..2]{
 process Inicio{
     int cant=0;
     
-    do Alumno?llegue -> cant++;
+    do cant !=40; Alumno[*]?llegue -> cant++;
     od
     for i:0..P-1
         Alumno[i]!espero();
