@@ -1,0 +1,106 @@
+chan solicitud(int),respuesta[N](int);
+
+Process Maquina[id:0..N-1]{
+    while(true){
+        send solicitud(id); 
+        receive respuesta[id](ok);
+    }
+}
+
+process CoordinadorCola{
+    colaEspecial c;
+    while(true){
+        if(not empty (solicitud))AND empty(listo) ->    receive solicitud(idCli)
+                                                        pushPrio(c,idCli);
+        [] not empty (listo) -> if(not empty(c)) popPrio(c,idcli)
+                                else idCli=-1
+                                send pedido(idCli);
+
+    }
+}
+
+Process Servidor{
+    while(true){
+        send listo(1);
+        receive pedido(idMaquina)
+        if(idMaquina<>-1)
+            //resuelvo
+            send respuesta[idMaquina](1);
+        else{
+            Optimizar
+        }
+    }
+}
+
+Resolver con PMS un antivirus distribuido. En el hay R procesos robots que continuamente estan buscando posibles sitios web infectados; cada vez que encuentran uno avisan la direccion  continuan buscando. Hay un proceso analizador que se encargue de hacer todas las pruebas necesarias con cada uno de los sitos encontrados poor los robots para determinar si estan o no infectados. nota: maximizar la concurrencia.
+
+process Robot[id:0..R-1]{
+    text sitio;
+    while(true){
+        //busco sitio
+        if(sitio infectado){
+            Admin!(sitio)
+        }
+    }
+}
+
+process Admin{
+    cola c;
+    text sitio;
+    int ok;
+
+    while(true){
+        do Robot[*]?(sitio) -> push(c,sitio)
+        [] not empty(c); Analizador?listo(ok) -> Analizador!pedido(pop(c))
+    }
+}
+
+process Analizador{
+    text sitio;
+
+    while(true){
+        Admin!listo(1)
+        Admin?pedido(sitio)
+        // realizo pruebas
+
+    }
+}
+
+Resolver con ADA el siguiente problema. En una empresa hay 5 controladores de temperatura y una central. Cada controlador toma la temperatura del ambiente cada 10 minutos y se la envia a una central para que analice el dato y le indique que hacer. Cuando la central recibe una temperatura que es mayor a 40 grados, se detiene a ese controlador durante 1 hr.
+Nota: maximizar laconcurrencia wachinn
+
+procedure Parcial is
+
+    taks type Controlador;
+    arrCont(1..N) array of Controlador;
+    task Central is
+        entry analizarTemp(temp: in int,decision:out boolean)
+    end Central;
+
+    task body Controlador is
+
+    begin
+        loop
+            //mido temp
+            Central.analizarTemp(temp,decision)
+            if(decision)
+                delay(60 min)
+            else
+                delay(10 min)
+        end loop
+    end
+
+    task body Central is
+
+    begin
+        loop
+            Accept analizarTemp(temp:in int, decision: out boolean)do
+                if(temp>40){
+                    decision=true
+                }
+                else decision=false;
+            end analizarTemp;
+        end loop
+    end;
+begin
+end Parcial

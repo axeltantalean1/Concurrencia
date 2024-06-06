@@ -1,0 +1,170 @@
+Resolver con PMS. En la estación de trenes hay una terminal de SUBE que debe ser usada por P personas de
+acuerdo con el orden de llegada. Cuando la persona accede a la terminal, la usa y luego se retira para dejar al
+siguiente. Nota: cada Persona una sólo una vez la terminal.
+
+
+Process Persona[id:0..P-1]{
+    Coordinador!estoy(id)
+    Coordinador?pasa(ok)
+    //uso recurso
+    Coordinador!mefui(1);
+}
+
+Process Coordinador{
+    boolean libre=true;
+    while(true){
+        if libre; Persona[*]?estoy(idP) -> libre=false
+                                           Persona[idP]!pasa(1);
+        [] not libre; Persona[*]?estoy(idP) -> push(c,idP)
+        [] Persona[*]mefui(ok) -> if(not empty(c))
+                                    pop(c)
+                                    Persona[idP]!pasa(1);
+                                   else 
+                                    libre=true;
+
+    }
+}
+
+
+2) En un negocio de cobros digitales hay P personas que deben pasar por la única caja de cobros para realizar el pago de sus boletas. Las personas son atendidas de acuerdo con el orden de llegada, teniendo prioridad aquellos que deben pagar menos de 5 boletas de los que pagan más. Adicionalmente, las personas embarazadas y los ancianos tienen prioridad sobre los dos casos anteriores. Las personas entregan sus boletas al cajero y el dinero de pago; el cajero les devuelve el vuelto y los recibos de pago. Implemente un programa que permita resolver el problema anterior usando ADA.
+
+procedure Examen is 
+
+    task type Persona;
+
+    arrPer(1..P) array of Persona;
+    
+    task Cajero is 
+        entry Encolar(boletas: in text; dinero:in int; vuelto: out int; recibo: out text)
+        entry Encolar5(boletas: in text; dinero:in int; vuelto: out int; recibo: out text)
+        entry EncolarAoE(boletas: in text; dinero:in int; vuelto: out int; recibo: out text)
+    end Cajero;
+
+    task body Persona is 
+    boletas: text;
+    dinero: int;
+    vuelto:int;
+    recibo: text;
+    cantB:int; // ya definido
+    esAoE:boolean;//ya definido
+    begin
+        if(esAoE){
+            Cajero.EncolarAoE(boletas,dinero,vuelto,recibo)
+        }
+        else if(cantB<5){
+           Cajero.Encolar5(boletas,dinero,vuelto,recibo) 
+        }
+        else 
+            Cajero.Encolar(boletas,dinero,vuelto,recibo);
+    end Persona;
+
+    task type Cajero is
+        
+    begin
+        loop
+            select 
+                when (EncolarAoE'count=0) and (Encolar5'count=0) -> 
+                    Accept Encolar(boletas: in text; dinero:in int; vuelto: out int; recibo: out text) is
+                        Cobrar(Boletas,dinero,vuelto,recibo);
+                    end Encolar
+                or when (EncolarAoE'count=0) ->
+                    Accept Encolar5(boletas: in text; dinero:in int; vuelto: out int; recibo: out text) is
+                        Cobrar(Boletas,dinero,vuelto,recibo);
+                    end Encolar
+                or  Accept EncolarAoE(boletas: in text; dinero:in int; vuelto: out int; recibo: out text)is
+                        Cobrar(Boletas,dinero,vuelto,recibo);
+                    end Encolar
+            end select;
+        end loop
+    end Cajero;
+begin
+
+end Examen;
+
+
+Resolver con PASAJE DE MENSAJES ASINCRÓNICO (PMA) el siguiente problema. En un negocio de cobros digitales
+hay P personas que deben pasar por la única caja de cobros para realizar el pago de sus boletas. Las personas son atendidas de acuerdo con el orden de llegada, teniendo prioridad aquellos que deben pagar menos de 5 boletas de los que pagan más. Adicionalmente, las personas embarazadas tienen prioridad sobre los dos casos anteriores. Las personas entregan sus boletas al cajero y el dinero de pago; el cajero les devuelve el vuelto y los recibos de pago.
+
+chan EncolarE,Encolar5,Encolar,res[P];
+
+Process Persona[id:0..P-1]{
+    if(Embarazada){
+        send EncolarE(boletas,dinero,id);
+    }
+    else if (CantB<5{
+        send Encolar5(boletas,dinero,id)
+    }
+    else 
+        send Encolar(boletas,dinero,id)
+    send estoy(1);
+    receive res[id](vuelto,recibo);
+}
+
+
+Process Cajero{
+
+    for i:0..P-1{
+        receive estoy(ok)
+        if not empty EncolarE -> receive EncolarE(boletas,dinero,id)
+        [] empty EncolarE AND not empty Encolar5 -> receive Encolar5(boletas,dinero,id)
+        [] Empty EncolarE AND empty Encolar5 and not Empty Encolar -> receive Encolar(boletas,dinero,id);
+        Cobrar(boletas,dinero,vuelto,recibo);
+        send res[id](vuelto,recibo);
+    }
+}
+
+Resolver con ADA el siguiente problema. La oficina central de una empresa de venta de indumentaria debe calcular cuántas veces fue vendido cada uno de los artículos de su catálogo. La empresa se compone de 100 sucursales y cada una de ellas maneja su propia base de datos de ventas. La oficina central cuenta con una herramienta que funciona de la siguiente manera: ante la consulta realizada para un artículo determinado, la herramienta envía el identificador del artículo a cada una de las sucursales, para que cada uno de éstas calcule cuántas veces fue vendido en ella. Al final del procesamiento, la herramienta debe conocer cuántas veces fue vendido en total, considerando todas las sucursales.
+Cuando ha terminado de procesar un artículo comienza con el siguiente (suponga que la herramienta tiene una función generarArtículo que retorna el siguiente ID a consultar). Nota: maximizar la concurrencia. Supongo que existe una función ObtenerVentas(ID) que retorna la cantidad de veces que fue vendido el artículo con identificador ID en la base de datos de la sucursal que la llama.
+
+procedure Empresa is
+    task type Sucursal;
+    arrSuc(1..100) array of Sucursal;
+
+    task Herramienta is
+        entry buscarArticulo(idArt:out int)
+        entry recibirDatos(cant:in int)
+        entry siguiente();
+    end Central;
+
+    task body Sucursal is
+    idS:int;
+    idArt:int;
+    begin
+        loop
+            Herramienta.buscarArticulo(idArt);
+
+            cant=ObtenerVentas(idArt)
+
+            Herramienta.recibirDatos(cant);
+            Herramienta.siguiente
+        end loop
+    end Sucursal;
+
+
+    task body Herramienta is
+        idArtG:int;
+        cantTotal(1..cant de articulos)array of int;
+    begin
+        loop
+            generarArticulo(idArtG)
+            cantTotal[idArtG]= 0;
+            for i:1..200 do
+                select 
+                    accept buscarArticulo(idArt:out int) do 
+                        idArt=irArtG;
+                    end buscarArticulo;
+                or when buscarArticulo'count=0 ->
+                    accept recibirDatos(cant:in int) do
+                        cantTotal[idArtG]=cantTotal[idArtG]+cant;
+                    end recibirDatos;
+            end for
+
+            for i:1..100
+                Accept siguiente();
+            end for
+
+        end loop
+    end Herramienta;
+begin
+
+end Empresa;
