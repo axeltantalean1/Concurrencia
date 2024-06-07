@@ -168,3 +168,84 @@ procedure Empresa is
 begin
 
 end Empresa;
+
+Resolver con PASAJE DE MENSAJES ASÍNCRONICOS (PMA) el siguiente problema. En una oficina hay un empleado para atender a N personas. Las personas pueden tener prioridad ALTA o BAJA (donde la marca con un número privado). El empleado atiende a las personas de acuerdo a su prioridad (primero los de ALTA y luego los de BAJA). Cada persona espera hasta que el empleado le permita su entrada y se retira. Nota: existe la función entrar(miperiodo) que simula que el empleado está atendiendo a una persona y la termina de atender y se retira.
+
+Process Persona[id:0..N-1]{
+    if(prio)
+        send encolarA(id)
+    else
+        send encolarB(id)
+    send listo(1)
+    receive res[id](res);
+}
+
+Process Empleado{
+    while (true){
+        receive listo(ok)
+        if not empty EncolarA -> receive encolarA(idCli)
+        empty EncolarA and not Empty EncolarB -> receive encolarB(idCli)
+        send res[idCli](Entrar(idCli))
+    }
+}
+
+Resolver con PASAJE DE MENSAJES SINCRÓNICOS (PMS) el siguiente problema. Hay N personas que deben usar un telefono público a la vez y van a usarlo de acuerdo al orden de llegada, pero ninguna persona puede usar el recurso sin que el anterior lo haya dejado completamente y solo puede ser utilizado por una persona a la vez. Nota: el teléfono NO es un proceso, es un recurso compartido usado para pasar mensajes por el medio de una función Usar_Telefono().
+
+
+Process Persona [id:0..N-1]{
+
+    Admin!estoy(id,esUrgente);
+    Admin?puedo();
+    UsarTelefono();
+    Admin!mefui(1);
+
+}
+
+Process Admin{
+    boolean libre=true;
+    colaEspecial C;
+    while (true){
+
+        if libre; Persona[*]?estoy(idP,esUrgente) -> libre=false
+                                                        Persona[idP]!puedo()
+        [] not libre; Persona[*]?estoy(idP,esUrgente) -> push(c,idP,esUrgente);
+
+        [] Persona[*]?mefui(ok) -> if(not empty c)
+                                    Persona[pop(c)]!puedo();
+                                    else libre =true;
+                                   
+    }
+}
+
+
+ADA
+
+procedure Hospital is
+
+    task type Paciente is
+        entry atender(datos:in text, receta: out text)
+    end Paciente;
+    arrPac(1..P) array of Paciente
+
+    task Medico;
+
+    task body Paciente is
+        
+    begin
+        Accept atender() do 
+            AtenderPaciente();
+        end atender
+    end Paciente;
+
+    task body Medico is
+
+    begin
+        for i: 1..P
+            select
+                Paciente.atender()
+            else 
+                delay(10 min)
+            end select
+    end Medico;
+begin
+end Hospital;
